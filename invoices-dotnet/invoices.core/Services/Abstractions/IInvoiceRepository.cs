@@ -19,6 +19,8 @@ public interface IInvoiceRepository
 
     Task<Invoice?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
+    Task<Invoice?> GetByIdTrackedAsync(Guid id, CancellationToken ct = default);
+
     Task<int> GetCountAsync(string? search = null, int? year = null, int? month = null, CancellationToken ct = default);
 
     Task AddAsync(Invoice invoice, CancellationToken ct = default);

@@ -129,6 +129,17 @@ builder.Services.AddSingleton(
     }
 );
 
+// CORS for Blazor WASM frontend
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // Controllers + JSON
 builder
     .Services.AddControllers()
@@ -155,6 +166,7 @@ using (var scope = app.Services.CreateScope())
     await SeedData.InitializeAsync(db);
 }
 
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

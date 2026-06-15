@@ -16,11 +16,12 @@ public class InvoiceRepository(AppDbContext db) : IInvoiceRepository
     private static readonly Dictionary<string, Expression<Func<Invoice, object>>> SortExpressions =
         new()
         {
-            [nameof(Invoice.Date)] = i => (object?)i.Date,
-            [nameof(Invoice.Total)] = i => (object)i.Total!,
-            ["Establishment"] = i => (object?)i.Establishment!.Name,
-            ["Cnpj"] = i => (object?)i.Establishment!.Cnpj,
-            ["createdAt"] = i => (object)i.RawInvoice!.CreatedAt!,
+            ["date"] = i => (object?)i.Date,
+            ["total"] = i => (object)i.Total!,
+            ["establishment"] = i => (object?)i.Establishment!.Name,
+            ["cnpj"] = i => (object?)i.Establishment!.Cnpj,
+            ["is_valid"] = i => (object)i.IsValid,
+            ["created_at"] = i => (object)i.RawInvoice!.CreatedAt!,
         };
 
     public async Task<List<Invoice>> GetAllAsync(
@@ -43,6 +44,11 @@ public class InvoiceRepository(AppDbContext db) : IInvoiceRepository
     }
 
     public async Task<Invoice?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        return await db.Invoices.Include(i => i.Establishment).Include(i => i.Items).AsNoTracking().FirstOrDefaultAsync(i => i.Id == id, ct);
+    }
+
+    public async Task<Invoice?> GetByIdTrackedAsync(Guid id, CancellationToken ct = default)
     {
         return await db.Invoices.Include(i => i.Establishment).Include(i => i.Items).FirstOrDefaultAsync(i => i.Id == id, ct);
     }

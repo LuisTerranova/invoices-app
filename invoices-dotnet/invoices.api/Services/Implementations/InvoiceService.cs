@@ -76,7 +76,7 @@ public class InvoiceService(
                 item.Name, item.Quantity, item.UnitPrice, item.Total);
         }
 
-        var existingInvoice = await repo.GetByIdAsync(invoice.Id, ct);
+        var existingInvoice = await repo.GetByIdTrackedAsync(invoice.Id, ct);
         if (existingInvoice == null)
             throw new KeyNotFoundException($"Invoice with id '{invoice.Id}' was not found.");
 
