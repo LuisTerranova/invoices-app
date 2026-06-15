@@ -22,18 +22,25 @@ func main() {
 
 	conn, err := amqp.Dial(rabbitURL)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	ch, err := conn.Channel()
-	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
 	defer conn.Close()
 
-	q, _ := ch.QueueDeclare("invoices_to_process", true, false, false, false, nil)
+	controlCh, err := conn.Channel()
+	if err != nil {
+		log.Fatalf("Failed to open control channel: %v", err)
+	}
+	defer controlCh.Close()
 
-	msgs, _ := ch.Consume(q.Name, "", false, false, false, false, nil)
+	q, err := controlCh.QueueDeclare("invoices_to_process", true, false, false, false, nil)
+	if err != nil {
+		log.Fatalf("Failed to declare queue: %v", err)
+	}
+
+	msgs, err := controlCh.Consume(q.Name, "", false, false, false, false, nil)
+	if err != nil {
+		log.Fatalf("Failed to register consumer: %v", err)
+	}
 
 	log.Println("[*] Awaiting invoices. Press CTRL+C to stop process")
 
@@ -43,7 +50,7 @@ func main() {
 	go func() {
 		<-sigCh
 		log.Println("Shutting down...")
-		ch.Cancel(q.Name, false)
+		controlCh.Cancel(q.Name, false)
 	}()
 
 	sem := make(chan struct{}, 10)
@@ -56,6 +63,14 @@ func main() {
 		go func(delivery amqp.Delivery) {
 			defer wg.Done()
 			defer func() { <-sem }()
+
+			workerCh, err := conn.Channel()
+			if err != nil {
+				log.Printf("Failed to open worker channel: %v", err)
+				delivery.Nack(false, true)
+				return
+			}
+			defer workerCh.Close()
 
 			raw, err := messaging.ToRawInvoice(delivery.Body)
 			if err != nil {
@@ -80,7 +95,7 @@ func main() {
 
 			result := parser.Parse(extractedText, raw.ID)
 
-			if err := messaging.PublishParsedInvoice(ch, result); err != nil {
+			if err := messaging.PublishParsedInvoice(workerCh, result); err != nil {
 				log.Printf("Failed to publish parsed invoice %s: %v", result.ID, err)
 				delivery.Nack(false, true)
 				return
