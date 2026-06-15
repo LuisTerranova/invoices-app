@@ -1,3 +1,4 @@
+using ClosedXML.Excel;
 using invoices.core.Models;
 using invoices.core.Services.Abstractions;
 using Microsoft.AspNetCore.Mvc;
@@ -114,6 +115,63 @@ public class InvoicesController(IInvoiceService invoiceService, IInvoiceReposito
         var fileName = string.IsNullOrWhiteSpace(raw.FileName) ? "original.pdf" : raw.FileName;
 
         return File(raw.ImageData, "application/pdf", fileName);
+    }
+
+    [HttpGet("export")]
+    public async Task<IActionResult> Export(
+        [FromQuery] int year,
+        [FromQuery] int month,
+        CancellationToken ct = default)
+    {
+        var invoices = await invoiceService.GetByMonthAsync(year, month, ct);
+
+        using var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("Relatório");
+
+        ws.Cell(1, 1).Value = "Mês de referência";
+        ws.Cell(1, 2).Value = $"{year:D4}-{month:D2}";
+        ws.Cell(1, 3).Value = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm");
+
+        ws.Cell(3, 1).Value = "Estabelecimento";
+        ws.Cell(3, 2).Value = "CNPJ";
+        ws.Cell(3, 3).Value = "Data";
+        ws.Cell(3, 4).Value = "Chave de Acesso";
+        ws.Cell(3, 5).Value = "Total";
+        ws.Cell(3, 6).Value = "Itens";
+        ws.Cell(3, 7).Value = "Status";
+
+        var headerRow = ws.Row(3);
+        headerRow.Style.Font.Bold = true;
+        headerRow.Style.Fill.BackgroundColor = XLColor.FromHtml("#EFE7D8");
+
+        int row = 4;
+        foreach (var inv in invoices)
+        {
+            ws.Cell(row, 1).Value = inv.RawEstablishment ?? "";
+            ws.Cell(row, 2).Value = inv.RawCnpj ?? "";
+            ws.Cell(row, 3).Value = inv.Date?.ToString("dd/MM/yyyy") ?? "";
+            ws.Cell(row, 4).Value = inv.AccessKey ?? "";
+            ws.Cell(row, 5).Value = inv.Total;
+            ws.Cell(row, 5).Style.NumberFormat.Format = "R$ #,##0.00";
+            ws.Cell(row, 6).Value = inv.Items?.Count ?? 0;
+            ws.Cell(row, 7).Value = inv.IsValid ? "Válida" : "Inválida";
+            row++;
+        }
+
+        ws.Cell(row, 1).Value = "Total";
+        ws.Cell(row, 1).Style.Font.Bold = true;
+        ws.Cell(row, 5).FormulaA1 = $"=SUM(E4:E{row - 1})";
+        ws.Cell(row, 5).Style.Font.Bold = true;
+        ws.Cell(row, 5).Style.NumberFormat.Format = "R$ #,##0.00";
+
+        ws.Columns().AdjustToContents();
+
+        var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"relatorio-{year:D4}-{month:D2}.xlsx");
     }
 
     [HttpPost("process")]

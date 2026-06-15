@@ -1,0 +1,48 @@
+@page "/login"
+@namespace invoices.front.blazor.Components.Pages
+
+<MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="color: #2D2B36; font-weight: 600;">
+    Entrar
+</MudText>
+
+<MudTextField @bind-Value="_username"
+              Label="Usuário"
+              For="@(() => _username)"
+              Immediate="true"
+              Variant="Variant.Outlined"
+              Class="mb-4"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Person" />
+
+<MudTextField @bind-Value="_password"
+              Label="Senha"
+              InputType="InputType.Password"
+              Variant="Variant.Outlined"
+              Class="mb-6"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Lock" />
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+        @_errorMessage
+    </MudAlert>
+}
+
+<MudButton Variant="Variant.Filled"
+           Color="Color.Primary"
+           FullWidth="true"
+           Disabled="_isLoading"
+           Size="Size.Large"
+           OnClick="HandleLogin"
+           Class="mb-4">
+    @if (_isLoading)
+    {
+        <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
+        <span>Entrando...</span>
+    }
+    else
+    {
+        <span>Entrar</span>
+    }
+</MudButton>

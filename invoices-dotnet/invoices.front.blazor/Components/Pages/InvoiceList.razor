@@ -1,0 +1,176 @@
+@page "/"
+@attribute [Authorize]
+@namespace invoices.front.blazor.Components.Pages
+
+<PageTitle>Notas Fiscais</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-6" Style="color: #2D2B36; font-weight: 600;">
+    Notas Fiscais
+</MudText>
+
+@if (_isInitialLoading)
+{
+    <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="400px" Class="mb-4" />
+}
+else if (_errorMessage is not null)
+{
+    <ErrorState Message="@_errorMessage"
+                Description="Não foi possível carregar a lista de notas fiscais."
+                ShowRetry="true"
+                OnRetry="LoadData" />
+}
+else
+{
+    <MudPaper Elevation="1" Class="pa-4 mb-4">
+        <div class="d-flex flex-wrap align-center gap-4">
+            <MudTextField @bind-Value="_searchText"
+                          Label="Buscar por estabelecimento, CNPJ ou chave de acesso"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Class="flex-grow-1"
+                          Immediate="true"
+                          KeyUp="HandleSearchKeyUp"
+                          Clearable="true"
+                          OnClearButtonClick="HandleClearSearch" />
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="HandleSearch">
+                Buscar
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Error"
+                       Disabled="!_hasSelection"
+                       OnClick="OpenDeleteDialog">
+                @if (_selectedInvoices.Count > 0)
+                {
+                    <span>Excluir Selecionados (@_selectedInvoices.Count)</span>
+                }
+                else
+                {
+                    <span>Excluir Selecionados</span>
+                }
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Tertiary"
+                       Disabled="_selectedGroup is null || _isExporting"
+                       OnClick="HandleExport">
+                @if (_isExporting)
+                {
+                    <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
+                    <span>Exportando...</span>
+                }
+                else
+                {
+                    <span>Exportar Relatório</span>
+                }
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    @if (_groups.Count > 0)
+    {
+        <MudPaper Elevation="1" Class="pa-4 mb-4">
+            <div class="d-flex flex-wrap gap-2">
+                    <MudButton Variant="Variant.Text"
+                               Color="@(_selectedGroup is null ? Color.Primary : Color.Default)"
+                               OnClick="@(async () => await SelectGroup(null))">
+                        Todas as Notas
+                    </MudButton>
+                    @foreach (var group in _groups)
+                    {
+                        var g = group;
+                        <MudButton Variant="Variant.Text"
+                                   Color="@(_selectedGroup?.Year == g.Year && _selectedGroup?.Month == g.Month ? Color.Primary : Color.Default)"
+                                   OnClick="@(async () => await SelectGroup(g))"
+                                   Class="group-chip">
+                        @group.FullLabel
+                    </MudButton>
+                }
+            </div>
+        </MudPaper>
+    }
+
+    <MudPaper Elevation="1" Class="pa-4">
+        @if (_invoices.Count == 0)
+        {
+            <EmptyState Icon="@Icons.Material.Filled.Description"
+                        Message="Nenhuma nota fiscal encontrada"
+                        Description="Tente ajustar os filtros ou fazer upload de novos PDFs." />
+        }
+        else
+        {
+            <MudTable T="Invoice"
+                      Items="@_invoices"
+                      MultiSelection="true"
+                      @bind-SelectedItems="_selectedInvoices"
+                      RowClick="HandleRowClick"
+                      Dense="true"
+                      Hover="true"
+                      Striped="true"
+                      Elevation="0"
+                      Class="mb-4">
+                <HeaderContent>
+                    <MudTh><MudText Typo="Typo.body2">Estabelecimento</MudText></MudTh>
+                    <MudTh><MudText Typo="Typo.body2">CNPJ</MudText></MudTh>
+                    <MudTh><MudText Typo="Typo.body2">Data</MudText></MudTh>
+                    <MudTh><MudText Typo="Typo.body2">Total</MudText></MudTh>
+                    <MudTh><MudText Typo="Typo.body2">Status</MudText></MudTh>
+                    <MudTh><MudText Typo="Typo.body2">Ações</MudText></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Estabelecimento">
+                        @context.RawEstablishment
+                    </MudTd>
+                    <MudTd DataLabel="CNPJ">
+                        @context.RawCnpj
+                    </MudTd>
+                    <MudTd DataLabel="Data">
+                        @context.Date?.ToString("dd/MM/yyyy")
+                    </MudTd>
+                    <MudTd DataLabel="Total">
+                        @context.Total?.ToString("C2")
+                    </MudTd>
+                    <MudTd DataLabel="Status">
+                        @if (context.IsValid)
+                        {
+                            <MudText Typo="Typo.body2" Style="color: #6B8E7A; font-weight: 500;">Válida</MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Style="color: #D4606A; font-weight: 500;">Inválida</MudText>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Ações">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="() => OpenSingleDeleteDialog(context)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <div class="d-flex align-center justify-space-between">
+                <MudText Typo="Typo.body2" Style="color: #6D6B7A;">
+                    @_totalCount nota(s) encontrada(s) — Página @_currentPage de @TotalPages
+                </MudText>
+
+                <div class="d-flex align-center gap-2">
+                    <MudButton Variant="Variant.Outlined"
+                               Disabled="!_canGoPrevious"
+                               OnClick="GoToPreviousPage">
+                        Anterior
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Disabled="!_canGoNext"
+                               OnClick="GoToNextPage">
+                        Próxima
+                    </MudButton>
+                </div>
+            </div>
+        }
+    </MudPaper>
+}

@@ -1,1 +1,0 @@
-{"nodes": [{"id": "RegexPatterns", "label": "Regex Patterns (CNPJ, Access Key, etc.)", "file_type": "code", "source_file": "backend-go/internal/parser/patterns.go", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

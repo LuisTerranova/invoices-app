@@ -1,0 +1,227 @@
+@page "/invoices/{Id:guid}"
+@attribute [Authorize]
+@namespace invoices.front.blazor.Components.Pages
+
+<PageTitle>Detalhe da Nota Fiscal</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-6" Style="color: #2D2B36; font-weight: 600;">
+    Detalhe da Nota Fiscal
+</MudText>
+
+@if (_isLoading)
+{
+    <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="200px" Class="mb-4" />
+    <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="300px" />
+}
+else if (_errorMessage is not null)
+{
+    <ErrorState Message="@_errorMessage"
+                ShowRetry="true"
+                OnRetry="LoadInvoice" />
+}
+else if (_invoice is null)
+{
+    <EmptyState Icon="@Icons.Material.Filled.Description"
+                Message="Nota fiscal não encontrada" />
+}
+else
+{
+    <div class="d-flex flex-wrap align-center gap-4 mb-6">
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="GoBack">
+            Voltar
+        </MudButton>
+
+        @if (_isEditing)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Disabled="_isSaving"
+                       OnClick="HandleSave">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
+                }
+                Salvar
+            </MudButton>
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       OnClick="HandleCancel">
+                Cancelar
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Edit"
+                       OnClick="HandleEdit">
+                Editar
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Tertiary"
+                       StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                       Disabled="_isOpeningOriginal"
+                       OnClick="ViewOriginal">
+                @if (_isOpeningOriginal)
+                {
+                    <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
+                }
+                Ver PDF Original
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Error"
+                       StartIcon="@Icons.Material.Filled.Delete"
+                       OnClick="HandleDelete">
+                Excluir
+            </MudButton>
+        }
+    </div>
+
+    <MudPaper Elevation="1" Class="pa-6 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-4" Style="color: #2D2B36;">
+            Dados da Nota
+        </MudText>
+
+        <div class="d-flex flex-wrap gap-4" style="row-gap: 16px;">
+            <MudTextField @bind-Value="_editEstablishment" Label="Estabelecimento"
+                          Variant="Variant.Outlined" For="@(() => _editEstablishment)"
+                          Class="flex-grow-1" Style="min-width: 250px;" Disabled="!_isEditing" />
+
+            <MudTextField @bind-Value="_editCnpj" Label="CNPJ"
+                          Variant="Variant.Outlined" For="@(() => _editCnpj)"
+                          Class="flex-grow-1" style="min-width: 200px;" Disabled="!_isEditing" />
+
+            <MudDatePicker @bind-Date="_editDate" Label="Data"
+                           Variant="Variant.Outlined"
+                           Class="flex-grow-1" style="min-width: 180px;"
+                           Disabled="!_isEditing" InputFormat="dd/MM/yyyy" />
+
+            <MudNumericField @bind-Value="_editTotal" Label="Total"
+                             Variant="Variant.Outlined" For="@(() => _editTotal)"
+                             Class="flex-grow-1" style="min-width: 150px;"
+                             Disabled="!_isEditing" Format="C2" />
+        </div>
+
+        @if (_invoice.ParseErrors?.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-4" Dense="true">
+                <strong>Erros de parse:</strong>
+                <ul class="mb-0 mt-1">
+                    @foreach (var err in _invoice.ParseErrors)
+                    {
+                        <li>@err</li>
+                    }
+                </ul>
+            </MudAlert>
+        }
+    </MudPaper>
+
+    <MudPaper Elevation="1" Class="pa-6 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-4" Style="color: #2D2B36;">
+            Itens
+        </MudText>
+
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Class="mb-4"
+                   Disabled="!_isEditing"
+                   OnClick="AddItem">
+            Adicionar Item
+        </MudButton>
+
+        <MudTable Items="@_editableItems"
+                  @bind-SelectedItem="_selectedItem"
+                  Dense="true"
+                  Hover="true"
+                  Striped="true"
+                  Elevation="0">
+            <HeaderContent>
+                <MudTh>Nome</MudTh>
+                <MudTh>Quantidade</MudTh>
+                <MudTh>Preço Unit.</MudTh>
+                <MudTh>Total</MudTh>
+                @if (_isEditing)
+                {
+                    <MudTh>Ações</MudTh>
+                }
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Nome">
+                    @if (_isEditing)
+                    {
+                        <MudTextField @bind-Value="context.Name" Variant="Variant.Outlined" Dense="true" />
+                    }
+                    else
+                    {
+                        @context.Name
+                    }
+                </MudTd>
+                <MudTd DataLabel="Quantidade">
+                    @if (_isEditing)
+                    {
+                        <MudNumericField @bind-Value="context.Quantity" Variant="Variant.Outlined" Dense="true" />
+                    }
+                    else
+                    {
+                        @context.Quantity
+                    }
+                </MudTd>
+                <MudTd DataLabel="Preço Unit.">
+                    @if (_isEditing)
+                    {
+                        <MudNumericField @bind-Value="context.UnitPrice" Variant="Variant.Outlined" Dense="true" Format="C2" />
+                    }
+                    else
+                    {
+                        @context.UnitPrice?.ToString("C2")
+                    }
+                </MudTd>
+                <MudTd DataLabel="Total">
+                    @if (_isEditing)
+                    {
+                        <MudNumericField @bind-Value="context.Total" Variant="Variant.Outlined" Dense="true" Format="C2" />
+                    }
+                    else
+                    {
+                        @context.Total?.ToString("C2")
+                    }
+                </MudTd>
+                @if (_isEditing)
+                {
+                    <MudTd DataLabel="Ações">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="() => RemoveItem(context)" />
+                    </MudTd>
+                }
+            </RowTemplate>
+        </MudTable>
+
+        @if (_editableItems.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="pa-4" Style="color: #6D6B7A;">
+                Nenhum item cadastrado.
+            </MudText>
+        }
+    </MudPaper>
+
+    @if (!string.IsNullOrEmpty(_invoice.RawText))
+    {
+        <MudPaper Elevation="1" Class="pa-6 mb-4">
+            <MudText Typo="Typo.h6" Class="mb-4" Style="color: #2D2B36;">
+                Texto Extraído (OCR)
+            </MudText>
+            <MudText Typo="Typo.body2" Style="white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85rem; color: #3D3B48; background: #FAF7F2; padding: 12px; border-radius: 8px;">
+                @_invoice.RawText
+            </MudText>
+        </MudPaper>
+    }
+}

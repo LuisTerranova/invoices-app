@@ -1,0 +1,20 @@
+@namespace invoices.front.blazor.Components.Shared
+
+<div class="d-flex flex-column align-center justify-center pa-8" style="min-height: 300px;">
+    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" Color="Color.Error" Class="mb-4" />
+    <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Error" Class="mb-2">
+        @Message
+    </MudText>
+    @if (!string.IsNullOrEmpty(Description))
+    {
+        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: #6D6B7A;" Class="mb-4">
+            @Description
+        </MudText>
+    }
+    @if (ShowRetry)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnRetry">
+            Tentar novamente
+        </MudButton>
+    }
+</div>

@@ -1,0 +1,14 @@
+@namespace invoices.front.blazor.Components.Shared
+
+<div class="d-flex flex-column align-center justify-center pa-8" style="min-height: 300px;">
+    <MudIcon Icon="@Icon" Size="Size.Large" Color="Color.Default" Class="mb-4" Style="opacity: 0.4;" />
+    <MudText Typo="Typo.h6" Align="Align.Center" Class="mb-2" Style="color: #6D6B7A;">
+        @Message
+    </MudText>
+    @if (!string.IsNullOrEmpty(Description))
+    {
+        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: #8D8B9A;">
+            @Description
+        </MudText>
+    }
+</div>
