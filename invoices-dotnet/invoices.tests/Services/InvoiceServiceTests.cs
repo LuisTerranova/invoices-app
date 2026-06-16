@@ -165,7 +165,7 @@ public class InvoiceServiceTests
         var incomingInvoice = new Invoice { Id = existingInvoice.Id, Items = new List<ParsedItem> { new ParsedItem { Name = "Item 1" } } };
 
         _mockRepo
-            .Setup(r => r.GetByIdAsync(incomingInvoice.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdTrackedAsync(incomingInvoice.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingInvoice);
 
         _mockRepo
@@ -174,7 +174,7 @@ public class InvoiceServiceTests
 
         await _sut.UpdateAsync(incomingInvoice);
 
-        _mockRepo.Verify(r => r.GetByIdAsync(incomingInvoice.Id, It.IsAny<CancellationToken>()), Times.Once);
+        _mockRepo.Verify(r => r.GetByIdTrackedAsync(incomingInvoice.Id, It.IsAny<CancellationToken>()), Times.Once);
         _mockRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -184,7 +184,7 @@ public class InvoiceServiceTests
         var invoice = new Invoice { Id = Guid.NewGuid() };
 
         _mockRepo
-            .Setup(r => r.GetByIdAsync(invoice.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdTrackedAsync(invoice.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Invoice?)null);
 
         var act = () => _sut.UpdateAsync(invoice);

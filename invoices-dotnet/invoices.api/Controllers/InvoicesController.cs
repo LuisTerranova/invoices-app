@@ -119,17 +119,39 @@ public class InvoicesController(IInvoiceService invoiceService, IInvoiceReposito
 
     [HttpGet("export")]
     public async Task<IActionResult> Export(
-        [FromQuery] int year,
-        [FromQuery] int month,
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] string? ids = null,
         CancellationToken ct = default)
     {
-        var invoices = await invoiceService.GetByMonthAsync(year, month, ct);
+        List<Invoice> invoices;
+        string fileName;
+        string referenceLabel;
+        string referenceValue;
+
+        if (!string.IsNullOrWhiteSpace(ids))
+        {
+            var idList = ids.Split(',')
+                .Select(Guid.Parse)
+                .ToList();
+            invoices = await invoiceService.GetByIdsAsync(idList, ct);
+            fileName = $"relatorio-selecionados-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx";
+            referenceLabel = "Tipo de relatório";
+            referenceValue = "Notas Selecionadas";
+        }
+        else
+        {
+            invoices = await invoiceService.GetByMonthAsync(year!.Value, month!.Value, ct);
+            fileName = $"relatorio-{year.Value:D4}-{month.Value:D2}.xlsx";
+            referenceLabel = "Mês de referência";
+            referenceValue = $"{year.Value:D4}-{month.Value:D2}";
+        }
 
         using var workbook = new XLWorkbook();
         var ws = workbook.Worksheets.Add("Relatório");
 
-        ws.Cell(1, 1).Value = "Mês de referência";
-        ws.Cell(1, 2).Value = $"{year:D4}-{month:D2}";
+        ws.Cell(1, 1).Value = referenceLabel;
+        ws.Cell(1, 2).Value = referenceValue;
         ws.Cell(1, 3).Value = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm");
 
         ws.Cell(3, 1).Value = "Estabelecimento";
@@ -170,8 +192,7 @@ public class InvoicesController(IInvoiceService invoiceService, IInvoiceReposito
         workbook.SaveAs(stream);
         stream.Position = 0;
 
-        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"relatorio-{year:D4}-{month:D2}.xlsx");
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
     }
 
     [HttpPost("process")]

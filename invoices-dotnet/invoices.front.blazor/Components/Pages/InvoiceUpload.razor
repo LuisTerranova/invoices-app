@@ -4,37 +4,29 @@
 
 <PageTitle>Upload de PDFs</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-6" Style="color: #2D2B36; font-weight: 600;">
+<MudText Typo="Typo.h5" Class="mb-6">
     Upload de Notas Fiscais
 </MudText>
 
-<MudPaper Elevation="1" Class="pa-6 mb-4">
-    <MudFileUpload T="IBrowserFile"
-                   Multiple="true"
-                   OnFilesChanged="@(files => HandleFilesSelected(files))"
-                   AcceptedExtensions=".pdf"
-                   Class="mb-4"
-                   DragAndDrop="true">
-        <CustomContent>
-            <div class="d-flex flex-column align-center justify-center pa-8"
-                 style="border: 2px dashed #E5DDCD; border-radius: 8px; background: #FAF7F2; cursor: pointer;"
-                 @onclick="context.OpenFilePickerAsync">
-                <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Primary" Class="mb-4" />
-                <MudText Typo="Typo.body1" Class="mb-2" Style="color: #3D3B48;">
-                    Arraste arquivos PDF aqui ou clique para selecionar
-                </MudText>
-                <MudText Typo="Typo.body2" Style="color: #6D6B7A;">
-                    Apenas arquivos PDF são aceitos
-                </MudText>
-            </div>
-        </CustomContent>
-    </MudFileUpload>
+    <MudPaper Elevation="1" Class="pa-6 mb-4">
+        <label for="pdf-upload" class="drop-zone d-flex flex-column align-center justify-center pa-8 mb-4">
+            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" Class="mb-4"
+                     Style="font-size: 3.5rem;" />
+            <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Inherit">
+                Arraste arquivos PDF aqui
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                ou clique para selecionar — apenas PDF (múltiplos permitidos)
+            </MudText>
+        </label>
+        <InputFile id="pdf-upload" multiple accept=".pdf"
+                   OnChange="HandleFileSelected"
+                   class="inputfile-hidden" />
 
     @if (_statusMessage is not null)
     {
         <MudAlert Severity="@(_statusIsError ? Severity.Error : Severity.Success)"
-                  Class="mb-4"
-                  Dense="true">
+                  Class="mb-4" Dense="true">
             @_statusMessage
         </MudAlert>
     }
@@ -43,9 +35,10 @@
     {
         <MudTable Items="@_pendingFiles" Dense="true" Hover="true" Elevation="0" Class="mb-4">
             <HeaderContent>
-                <MudTh>Arquivo</MudTh>
-                <MudTh>Status</MudTh>
-                <MudTh>Ações</MudTh>
+                <MudTh><MudText Typo="Typo.body2">Arquivo</MudText></MudTh>
+                <MudTh><MudText Typo="Typo.body2">Tamanho</MudText></MudTh>
+                <MudTh><MudText Typo="Typo.body2">Status</MudText></MudTh>
+                <MudTh><MudText Typo="Typo.body2">Ações</MudText></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Arquivo">
@@ -54,26 +47,42 @@
                         <MudText Typo="Typo.body2">@context.FileName</MudText>
                     </div>
                 </MudTd>
+                <MudTd DataLabel="Tamanho">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @FormatFileSize(context.Data?.Length ?? 0)
+                    </MudText>
+                </MudTd>
                 <MudTd DataLabel="Status">
-                    @if (context.Error is not null)
+                    @if (context.IsUploading)
                     {
-                        <MudText Typo="Typo.body2" Style="color: #D4606A;">@context.Error</MudText>
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mt-1" />
+                    }
+                    else if (context.Error is not null)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Error" Class="error-text-sm">
+                            @context.Error
+                        </MudText>
+                    }
+                    else if (context.IsDone)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Tertiary">Enviado</MudText>
                     }
                     else
                     {
-                        <MudText Typo="Typo.body2" Style="color: #6B8E7A;">Pronto</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Pronto</MudText>
                     }
                 </MudTd>
                 <MudTd DataLabel="Ações">
                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                    Size="Size.Small"
                                    Color="Color.Error"
+                                   Disabled="context.IsUploading"
                                    OnClick="() => RemoveFile(context)" />
                 </MudTd>
             </RowTemplate>
         </MudTable>
 
-        <div class="d-flex align-center gap-4">
+        <div class="d-flex align-center gap-4 mt-4">
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.CloudUpload"
@@ -82,7 +91,7 @@
                 @if (_isUploading)
                 {
                     <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
-                    <span>Enviando... (@_uploadedCount de @_pendingFiles.Count)</span>
+                    <span>Enviando... (@_uploadedCount de @_pendingFiles.Where(f => f.Error is null && f.Data is not null).Count())</span>
                 }
                 else
                 {
@@ -91,7 +100,6 @@
             </MudButton>
 
             <MudButton Variant="Variant.Text"
-                       Color="Color.Default"
                        Disabled="_isUploading"
                        OnClick="ClearFiles">
                 Limpar todos

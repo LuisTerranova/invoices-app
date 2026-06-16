@@ -4,13 +4,19 @@
 
 <PageTitle>Notas Fiscais</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-6" Style="color: #2D2B36; font-weight: 600;">
+<MudText Typo="Typo.h5" Class="mb-6">
     Notas Fiscais
 </MudText>
 
 @if (_isInitialLoading)
 {
-    <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="400px" Class="mb-4" />
+    <MudPaper Elevation="1" Class="pa-6">
+        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="48px" Class="mb-4" />
+        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="32px" Class="mb-2" />
+        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="32px" Class="mb-2" />
+        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="32px" Class="mb-2" />
+        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="32px" />
+    </MudPaper>
 }
 else if (_errorMessage is not null)
 {
@@ -28,7 +34,7 @@ else
                           Variant="Variant.Outlined"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          Class="flex-grow-1"
+                          Class="flex-grow-1 flex-grow-sm-12"
                           Immediate="true"
                           KeyUp="HandleSearchKeyUp"
                           Clearable="true"
@@ -40,13 +46,20 @@ else
                 Buscar
             </MudButton>
 
-            <MudButton Variant="Variant.Outlined"
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                           Color="Color.Primary"
+                           Variant="Variant.Outlined"
+                           Size="Size.Large"
+                           OnClick="HandleRefresh"
+                           Title="Atualizar lista" />
+
+            <MudButton Variant="Variant.Filled"
                        Color="Color.Error"
                        Disabled="!_hasSelection"
                        OnClick="OpenDeleteDialog">
                 @if (_selectedInvoices.Count > 0)
                 {
-                    <span>Excluir Selecionados (@_selectedInvoices.Count)</span>
+                    <span>Excluir (@_selectedInvoices.Count)</span>
                 }
                 else
                 {
@@ -54,9 +67,9 @@ else
                 }
             </MudButton>
 
-            <MudButton Variant="Variant.Outlined"
+            <MudButton Variant="Variant.Filled"
                        Color="Color.Tertiary"
-                       Disabled="_selectedGroup is null || _isExporting"
+                       Disabled="(!_hasSelection && _selectedGroup is null) || _isExporting"
                        OnClick="HandleExport">
                 @if (_isExporting)
                 {
@@ -73,22 +86,22 @@ else
 
     @if (_groups.Count > 0)
     {
-        <MudPaper Elevation="1" Class="pa-4 mb-4">
-            <div class="d-flex flex-wrap gap-2">
-                    <MudButton Variant="Variant.Text"
-                               Color="@(_selectedGroup is null ? Color.Primary : Color.Default)"
-                               OnClick="@(async () => await SelectGroup(null))">
-                        Todas as Notas
-                    </MudButton>
-                    @foreach (var group in _groups)
-                    {
-                        var g = group;
-                        <MudButton Variant="Variant.Text"
-                                   Color="@(_selectedGroup?.Year == g.Year && _selectedGroup?.Month == g.Month ? Color.Primary : Color.Default)"
-                                   OnClick="@(async () => await SelectGroup(g))"
-                                   Class="group-chip">
-                        @group.FullLabel
-                    </MudButton>
+        <MudPaper Elevation="1" Class="pa-3 mb-4">
+            <div class="d-flex flex-wrap align-center gap-1">
+                <MudChip T="string" Text="Todas"
+                         Color="@(_selectedGroup is null ? Color.Primary : Color.Default)"
+                         Variant="@(_selectedGroup is null ? Variant.Filled : Variant.Outlined)"
+                         Size="Size.Small"
+                         OnClick="@(e => SelectGroup(null))" />
+                @foreach (var group in _groups)
+                {
+                    var g = group;
+                    <MudChip T="string"
+                             Text="@g.FullLabel"
+                             Color="@(_selectedGroup?.Year == g.Year && _selectedGroup?.Month == g.Month ? Color.Primary : Color.Default)"
+                             Variant="@(_selectedGroup?.Year == g.Year && _selectedGroup?.Month == g.Month ? Variant.Filled : Variant.Outlined)"
+                             Size="Size.Small"
+                             OnClick="@(e => SelectGroup(g))" />
                 }
             </div>
         </MudPaper>
@@ -106,8 +119,9 @@ else
             <MudTable T="Invoice"
                       Items="@_invoices"
                       MultiSelection="true"
-                      @bind-SelectedItems="_selectedInvoices"
-                      RowClick="HandleRowClick"
+                      SelectedItems="_selectedInvoices"
+                      SelectedItemsChanged="OnSelectedItemsChanged"
+                      OnRowClick="HandleRowClick"
                       Dense="true"
                       Hover="true"
                       Striped="true"
@@ -122,49 +136,57 @@ else
                     <MudTh><MudText Typo="Typo.body2">Ações</MudText></MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="Estabelecimento">
-                        @context.RawEstablishment
+                    <MudTd DataLabel="Estabelecimento" OnClick="() => NavigateToDetail(context)">
+                        <MudText Typo="Typo.body2" Color="Color.Primary" Style="cursor: pointer; font-weight: 500;">@context.Establishment?.Name</MudText>
                     </MudTd>
-                    <MudTd DataLabel="CNPJ">
-                        @context.RawCnpj
+                    <MudTd DataLabel="CNPJ" OnClick="() => NavigateToDetail(context)">
+                        <MudText Typo="Typo.body2" Style="cursor: pointer;">@context.Establishment?.Cnpj</MudText>
                     </MudTd>
                     <MudTd DataLabel="Data">
-                        @context.Date?.ToString("dd/MM/yyyy")
+                        <MudText Typo="Typo.body2">@context.Date?.ToString("dd/MM/yyyy")</MudText>
                     </MudTd>
                     <MudTd DataLabel="Total">
-                        @context.Total?.ToString("C2")
+                        <MudText Typo="Typo.body2" Style="font-weight: 500;">@context.Total?.ToString("C2")</MudText>
                     </MudTd>
                     <MudTd DataLabel="Status">
                         @if (context.IsValid)
                         {
-                            <MudText Typo="Typo.body2" Style="color: #6B8E7A; font-weight: 500;">Válida</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Tertiary">Válida</MudChip>
                         }
                         else
                         {
-                            <MudText Typo="Typo.body2" Style="color: #D4606A; font-weight: 500;">Inválida</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Inválida</MudChip>
                         }
                     </MudTd>
                     <MudTd DataLabel="Ações">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                       Size="Size.Small"
+                                       Color="Color.Primary"
+                                       OnClick="() => NavigateToDetail(context)"
+                                       Title="Visualizar / Editar" />
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Size="Size.Small"
                                        Color="Color.Error"
-                                       OnClick="() => OpenSingleDeleteDialog(context)" />
+                                       OnClick="() => OpenSingleDeleteDialog(context)"
+                                       Title="Excluir" />
                     </MudTd>
                 </RowTemplate>
             </MudTable>
 
-            <div class="d-flex align-center justify-space-between">
-                <MudText Typo="Typo.body2" Style="color: #6D6B7A;">
-                    @_totalCount nota(s) encontrada(s) — Página @_currentPage de @TotalPages
+            <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    @_totalCount nota(s) — Página @_currentPage de @TotalPages
                 </MudText>
 
                 <div class="d-flex align-center gap-2">
                     <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
                                Disabled="!_canGoPrevious"
                                OnClick="GoToPreviousPage">
                         Anterior
                     </MudButton>
                     <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
                                Disabled="!_canGoNext"
                                OnClick="GoToNextPage">
                         Próxima

@@ -15,10 +15,13 @@ public partial class LoginPage : ComponentBase
     [Inject]
     private ISnackbar Snackbar { get; set; } = null!;
 
+    private MudForm _form = null!;
+    private bool _isFormValid;
     private string _username = string.Empty;
     private string _password = string.Empty;
     private string? _errorMessage;
     private bool _isLoading;
+    private bool _showPassword;
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,11 +34,8 @@ public partial class LoginPage : ComponentBase
 
     private async Task HandleLogin()
     {
-        if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_password))
-        {
-            _errorMessage = "Preencha usuário e senha.";
-            return;
-        }
+        await _form.Validate();
+        if (!_isFormValid) return;
 
         _isLoading = true;
         _errorMessage = null;

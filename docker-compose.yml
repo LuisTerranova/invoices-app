@@ -26,7 +26,7 @@ services:
       POSTGRES_PASSWORD: postgrespassword
       POSTGRES_DB: invoices_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -49,11 +49,7 @@ services:
       - RabbitMQ__HostName=rabbitmq
       - ASPNETCORE_ENVIRONMENT=Development
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/invoices/count"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      test: ["CMD-SHELL", "curl -sS http://localhost:8080 > /dev/null 2>&1 || exit 1"]
     depends_on:
       rabbitmq:
         condition: service_healthy

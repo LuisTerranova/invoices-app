@@ -34,6 +34,9 @@ public partial class InvoiceDetail : ComponentBase
     private bool _isOpeningOriginal;
     private string? _errorMessage;
 
+    private MudForm _editForm = null!;
+    private bool _isEditFormValid;
+
     private string _editEstablishment = string.Empty;
     private string? _editCnpj;
     private DateTime? _editDate;
@@ -58,6 +61,20 @@ public partial class InvoiceDetail : ComponentBase
             {
                 _errorMessage = "Nota fiscal não encontrada.";
             }
+            else
+            {
+                _editEstablishment = _invoice.RawEstablishment ?? _invoice.Establishment?.Name ?? "";
+                _editCnpj = _invoice.RawCnpj ?? _invoice.Establishment?.Cnpj;
+                _editDate = _invoice.Date;
+                _editTotal = _invoice.Total;
+                _editableItems = _invoice.Items?.Select(i => new ParsedItem
+                {
+                    Name = i.Name,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice,
+                    Total = i.Total,
+                }).ToList() ?? [];
+            }
         }
         catch (Exception ex)
         {
@@ -73,8 +90,8 @@ public partial class InvoiceDetail : ComponentBase
     {
         if (_invoice is null) return;
 
-        _editEstablishment = _invoice.RawEstablishment ?? "";
-        _editCnpj = _invoice.RawCnpj;
+        _editEstablishment = _invoice.RawEstablishment ?? _invoice.Establishment?.Name ?? "";
+        _editCnpj = _invoice.RawCnpj ?? _invoice.Establishment?.Cnpj;
         _editDate = _invoice.Date;
         _editTotal = _invoice.Total;
         _editableItems = _invoice.Items?.Select(i => new ParsedItem
@@ -90,6 +107,13 @@ public partial class InvoiceDetail : ComponentBase
     private async Task HandleSave()
     {
         if (_invoice is null) return;
+
+        await _editForm.Validate();
+        if (!_isEditFormValid)
+        {
+            Snackbar.Add("Corrija os campos obrigatórios antes de salvar.", Severity.Warning);
+            return;
+        }
 
         _isSaving = true;
         try
@@ -118,7 +142,14 @@ public partial class InvoiceDetail : ComponentBase
     private void HandleCancel()
     {
         _isEditing = false;
-        _editableItems = _invoice?.Items?.ToList() ?? [];
+        // Restore view-mode items
+        _editableItems = _invoice?.Items?.Select(i => new ParsedItem
+        {
+            Name = i.Name,
+            Quantity = i.Quantity,
+            UnitPrice = i.UnitPrice,
+            Total = i.Total,
+        }).ToList() ?? [];
     }
 
     private async Task HandleDelete()
@@ -127,7 +158,7 @@ public partial class InvoiceDetail : ComponentBase
 
         var confirmed = await ShowConfirmDialog(
             "Excluir Nota Fiscal",
-            $"Deseja realmente excluir a nota de {_invoice.RawEstablishment}?");
+            $"Deseja realmente excluir a nota de \"{_invoice.RawEstablishment}\"? Esta ação não pode ser desfeita.");
 
         if (confirmed)
         {
@@ -192,7 +223,13 @@ public partial class InvoiceDetail : ComponentBase
         {
             { "Message", message }
         };
-        var dialog = await Dialog.ShowAsync<ConfirmDialog>(title, parameters);
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmDialog>(title, parameters, options);
         var result = await dialog.Result;
         return !result.Canceled;
     }

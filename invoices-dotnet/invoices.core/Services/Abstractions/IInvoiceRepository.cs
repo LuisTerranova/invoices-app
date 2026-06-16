@@ -44,4 +44,6 @@ public interface IInvoiceRepository
     Task<List<YearMonthGroup>> GetGroupsAsync(CancellationToken ct = default);
 
     Task<List<Invoice>> GetByMonthAsync(int year, int month, CancellationToken ct = default);
+
+    Task<List<Invoice>> GetByIdsAsync(List<Guid> ids, CancellationToken ct = default);
 }

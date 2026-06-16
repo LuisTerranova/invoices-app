@@ -193,7 +193,7 @@ public class InvoiceRepositoryTests : IDisposable
     {
         await SeedInvoicesAsync();
         var all = await _repo.GetAllAsync(1, 10);
-        var toDelete = await _repo.GetByIdAsync(all.First().Id);
+        var toDelete = await _repo.GetByIdTrackedAsync(all.First().Id);
 
         await _repo.DeleteAsync(toDelete!);
 

@@ -80,6 +80,9 @@ func extractStoreName(lines []string) *string {
 		searchLimit = 20
 	}
 
+	// Track first meaningful non-address line as fallback
+	var firstNameLine *string
+
 	for i := 0; i < searchLimit; i++ {
 		line := strings.TrimSpace(lines[i])
 		upper := strings.ToUpper(line)
@@ -101,6 +104,15 @@ func extractStoreName(lines []string) *string {
 			return &line
 		}
 
+		// Fallback: capture first non-empty line within first 5 that isn't address-like
+		if firstNameLine == nil && i < 5 && len(line) > 5 &&
+			!reCNPJ.MatchString(upper) &&
+			!strings.Contains(upper, "RUA") &&
+			!strings.Contains(upper, "AV ") &&
+			!strings.Contains(upper, "AVENIDA") {
+			firstNameLine = &line
+		}
+
 		if reCNPJ.MatchString(upper) {
 			nameOnly := reCNPJ.ReplaceAllString(line, "")
 			nameOnly = strings.ReplaceAll(nameOnly, "CNPJ:", "")
@@ -115,6 +127,11 @@ func extractStoreName(lines []string) *string {
 		if i < 3 && len(line) < 80 && !strings.Contains(upper, "NFE") && !strings.Contains(upper, "NFC-E") && !strings.Contains(upper, "DANFE") && !reDateDDMMYYYY.MatchString(upper) && !reDateYYYYMMDD.MatchString(upper) {
 			return &line
 		}
+	}
+
+	// If regex found nothing, return first captured line as fallback
+	if firstNameLine != nil {
+		return firstNameLine
 	}
 
 	return nil
@@ -236,18 +253,59 @@ func parseItems(lines []string, upperText string) []models.ParsedItem {
 	var items []models.ParsedItem
 	upperLines := strings.Split(upperText, "\n")
 
+	// Common non-item keywords in Brazilian invoices
+	rejectKeywords := []string{
+		"CNPJ", "NFC-E", "CHAVE", "CONSULTA", "DANFE",
+		"RUA", "AV ", "AVENIDA", "BAIRRO", "CENTRO", "COMPLEMENTO",
+		"CEP", "FONE", "TELEFONE", "IE ", "IMPRESSO",
+		"ICMS", "PIS", "COFINS", "IPI", "FRETE", "SEGURO", "FCP",
+		"DESCONTO", "TROCO", "FORMA PAG", "CARTAO", "DINHEIRO",
+		"PAGAMENTO", "TOTAL", "SUBTOTAL", "VALOR",
+		"QTD", "PRODUTO", "CÓDIGO", "CODIGO",
+		"ST ", "FCP",
+		"CAIXA", "OBSERVA", "OBS ",
+	}
+
 	for i, line := range lines {
 		upper := upperLines[i]
-
-		// Skip date-looking lines, pure-number lines, and header lines
 		trimmed := strings.TrimSpace(line)
+
+		// Skip empty, too short, or date-only lines
 		if reDateDMY.MatchString(trimmed) || len(trimmed) < 4 {
 			continue
 		}
-		if strings.Contains(upper, "CNPJ") || strings.Contains(upper, "NFC-E") ||
-			strings.Contains(upper, "CHAVE") ||
-			strings.Contains(upper, "CONSULTA") || strings.Contains(upper, "DANFE") ||
-			strings.Contains(upper, "RUA") || strings.Contains(upper, "AV ") {
+
+		// Skip lines starting with separators or known non-item chars
+		if strings.HasPrefix(trimmed, "/") || strings.HasPrefix(trimmed, "-") ||
+			strings.HasPrefix(trimmed, ":") || strings.HasPrefix(trimmed, ".") ||
+			strings.HasPrefix(trimmed, "–") {
+			continue
+		}
+
+		// Skip lines with time patterns (HH:MM or HH:MM:SS)
+		if strings.Contains(upper, ":") {
+			continue
+		}
+
+		// Skip lines with percentage sign
+		if strings.Contains(upper, "%") {
+			continue
+		}
+
+		// Skip lines containing known non-item keywords
+		skip := false
+		for _, kw := range rejectKeywords {
+			if strings.Contains(upper, kw) {
+				skip = true
+				break
+			}
+		}
+		if skip {
+			continue
+		}
+
+		// Skip lines matching CNPJ format even without the label
+		if reCNPJ.MatchString(upper) {
 			continue
 		}
 
@@ -259,17 +317,23 @@ func parseItems(lines []string, upperText string) []models.ParsedItem {
 			continue
 		}
 
+		// Reject items with unrealistically high totals (> R$ 25,000 per item)
+		if item.Total != nil && *item.Total > 25000 {
+			continue
+		}
+
 		if item.Name == nil && i > 0 {
 			name := strings.TrimSpace(lines[i-1])
 			if len(name) > 0 && !reBarcode.MatchString(name) && !rePrice.MatchString(name) &&
-				!reDateDMY.MatchString(name) {
+				!reDateDMY.MatchString(name) && !strings.Contains(strings.ToUpper(name), "CAIXA") {
 				item.Name = &name
 			}
 		}
 
 		if item.Name == nil && i < len(lines)-1 {
 			name := strings.TrimSpace(lines[i+1])
-			if len(name) > 0 && !reBarcode.MatchString(name) && !reDateDMY.MatchString(name) {
+			if len(name) > 0 && !reBarcode.MatchString(name) && !reDateDMY.MatchString(name) &&
+				!strings.Contains(strings.ToUpper(name), "CAIXA") {
 				item.Name = &name
 			}
 		}
@@ -350,12 +414,33 @@ func parseFlexibleItemLine(line string) *models.ParsedItem {
 		strings.Contains(upper, "CONSULTA") || strings.Contains(upper, "NFC-E") ||
 		strings.Contains(upper, "DANFE") || strings.Contains(upper, "VALOR") ||
 		strings.Contains(upper, "TOTAL") || strings.Contains(upper, "SUBTOTAL") ||
-		strings.Contains(upper, "DESCONTO") || reCNPJ.MatchString(upper) {
+		strings.Contains(upper, "DESCONTO") || strings.Contains(upper, "TROCO") ||
+		strings.Contains(upper, "ICMS") || strings.Contains(upper, "PIS") ||
+		strings.Contains(upper, "COFINS") || strings.Contains(upper, "IPI") ||
+		strings.Contains(upper, "FRETE") || strings.Contains(upper, "SEGURO") ||
+		strings.Contains(upper, "FORMA PAG") || strings.Contains(upper, "CARTAO") ||
+		strings.Contains(upper, "DINHEIRO") || strings.Contains(upper, "PAGAMENTO") ||
+		strings.Contains(upper, "FCP") || strings.Contains(upper, "ST ") ||
+		strings.Contains(upper, "CENTRO") || strings.Contains(upper, "COMPLEMENTO") ||
+		strings.Contains(upper, "MUNICIPIO") || reCNPJ.MatchString(upper) ||
+		strings.Contains(upper, "%") {
 		return nil
 	}
 
 	allNumbers := reNumber.FindAllString(line, -1)
-	if len(allNumbers) < 2 {
+	if len(allNumbers) < 3 || len(allNumbers) > 6 {
+		return nil
+	}
+
+	// Reject lines that look like barcodes (many consecutive digits)
+	var digitCount int
+	for _, s := range allNumbers {
+		clean := strings.NewReplacer(",", "", ".", "").Replace(s)
+		if len(clean) >= 8 {
+			digitCount++
+		}
+	}
+	if digitCount >= 2 {
 		return nil
 	}
 

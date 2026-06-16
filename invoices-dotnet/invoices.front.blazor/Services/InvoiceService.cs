@@ -99,6 +99,32 @@ public class InvoiceService
         return await response.Content.ReadFromJsonAsync<List<Invoice>>(_json, ct) ?? [];
     }
 
+    public async Task<(Stream Stream, string FileName)> DownloadExportAsync(int? year, int? month, List<Guid>? ids, CancellationToken ct = default)
+    {
+        var query = "";
+        if (ids is { Count: > 0 })
+        {
+            query = $"?ids={string.Join(",", ids)}";
+        }
+        else if (year.HasValue && month.HasValue)
+        {
+            query = $"?year={year}&month={month}";
+        }
+        else
+        {
+            throw new ArgumentException("Either year and month, or a list of ids must be provided.");
+        }
+
+        var response = await _http.GetAsync($"api/invoices/export{query}", ct);
+        response.EnsureSuccessStatusCode();
+
+        var stream = await response.Content.ReadAsStreamAsync(ct);
+        var fileName = response.Content.Headers.ContentDisposition?.FileName ?? "relatorio.xlsx";
+        fileName = fileName.Trim('"');
+
+        return (stream, fileName);
+    }
+
     public async Task<byte[]?> GetRawImageAsync(Guid id, CancellationToken ct = default)
     {
         var response = await _http.GetAsync($"api/invoices/{id}/raw-image", ct);

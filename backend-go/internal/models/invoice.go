@@ -114,7 +114,7 @@ func ValidateAccessKeyChecksum(key string) bool {
 }
 
 func CleanCNPJ(cnpj string) string {
-	return strings.NewReplacer(".", "", "/", "", "-", "").Replace(cnpj)
+	return strings.NewReplacer(".", "", ",", "", "/", "", "-", "").Replace(cnpj)
 }
 
 func (p *ParsedInvoice) Validate() {

@@ -65,6 +65,11 @@ public class InvoiceService(
         return repo.GetByMonthAsync(year, month, ct);
     }
 
+    public Task<List<Invoice>> GetByIdsAsync(List<Guid> ids, CancellationToken ct = default)
+    {
+        return repo.GetByIdsAsync(ids, ct);
+    }
+
     public async Task UpdateAsync(Invoice invoice, CancellationToken ct = default)
     {
         _logger.LogInformation("=== UPDATE INVOICE {Id} ===", invoice.Id);

@@ -1,8 +1,9 @@
-﻿@inject AuthenticationStateProvider AuthStateProvider
+@inject AuthenticationStateProvider AuthStateProvider
 
-<MudThemeProvider Theme="@_theme" />
+<MudThemeProvider Theme="@CustomTheme.Default" />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<MudPopoverProvider />
 
 <CascadingAuthenticationState>
     <AuthorizeView>
@@ -13,54 +14,35 @@
                     <FocusOnNavigate RouteData="@routeData" Selector="h1" />
                 </Found>
                 <NotFound>
-                    <PageTitle>Not found</PageTitle>
+                    <PageTitle>Não encontrado</PageTitle>
                     <LayoutView Layout="@typeof(MainLayout)">
                         <EmptyState Icon="@Icons.Material.Filled.QuestionMark"
-                                    Message="Página não encontrada" />
+                                    Message="Página não encontrada"
+                                    Description="A página que você tentou acessar não existe." />
                     </LayoutView>
                 </NotFound>
             </Router>
         </Authorized>
         <NotAuthorized>
-            <div class="d-flex flex-column align-center justify-center" style="min-height: 100vh; background-color: #FAF7F2;">
-                <MudPaper Elevation="4" Class="pa-8" Style="width: 100%; max-width: 420px; border-radius: 12px;">
-                    <LoginPage />
-                </MudPaper>
+            <div class="login-page d-flex align-center justify-center">
+                <MudGrid Justify="Justify.Center" Class="ma-0 pa-4" Style="width: 100%; max-width: 480px;">
+                    <MudItem xs="12">
+                        <div class="d-flex flex-column align-center mb-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" Style="font-size: 3rem;" Class="mb-2" />
+                            <MudText Typo="Typo.h5" Color="Color.Inherit" Class="login-title">
+                                Gestão de Notas Fiscais
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="login-subtitle">
+                                Faça login para continuar
+                            </MudText>
+                        </div>
+                        <MudPaper Elevation="8" Class="pa-8">
+                            <LoginPage />
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
             </div>
         </NotAuthorized>
     </AuthorizeView>
 </CascadingAuthenticationState>
 
-@code {
-    private MudTheme _theme = new()
-    {
-        PaletteLight = new PaletteLight
-        {
-            Primary = "#C17A4A",
-            Secondary = "#EFE7D8",
-            Tertiary = "#6B8E7A",
-            Background = "#FAF7F2",
-            Surface = "#FFFFFF",
-            AppbarBackground = "#2D2B36",
-            TextPrimary = "#3D3B48",
-            TextSecondary = "#6D6B7A",
-            Error = "#D4606A",
-            Dark = "#2D2B36",
-            DrawerBackground = "#2D2B36",
-            DrawerText = "#EFE7D8",
-            DrawerIcon = "#C17A4A",
-            ActionDefault = "#C17A4A",
-            TableLines = "#EFE7D8",
-            TableStriped = "#FAF7F2",
-            LinesDefault = "#E5DDCD",
-        },
-        Typography = new Typography
-        {
-            Default = new DefaultTypography
-            {
-                FontFamily = new[] { "Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif" },
-                FontWeight = "400",
-            }
-        },
-    };
-}

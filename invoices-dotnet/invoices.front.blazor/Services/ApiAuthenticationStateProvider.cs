@@ -1,31 +1,38 @@
-using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.JSInterop;
 
 namespace invoices.front.blazor.Services;
 
 public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 {
-    private readonly AuthService _authService;
+    private readonly IJSRuntime _js;
 
-    public ApiAuthenticationStateProvider(AuthService authService)
+    public ApiAuthenticationStateProvider(IJSRuntime js)
     {
-        _authService = authService;
+        _js = js;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var token = await _authService.GetTokenAsync();
+        try
+        {
+            var token = await _js.InvokeAsync<string>("localStorage.getItem", "auth_token");
 
-        if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token))
+            {
+                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            }
+
+            var claims = ParseClaimsFromJwt(token);
+            var identity = new ClaimsIdentity(claims, "jwt");
+            return new AuthenticationState(new ClaimsPrincipal(identity));
+        }
+        catch
         {
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
-
-        var claims = ParseClaimsFromJwt(token);
-        var identity = new ClaimsIdentity(claims, "jwt");
-        return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
     public void NotifyStateChanged()

@@ -14,7 +14,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7118";
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5152";
 
 var jsonOptions = new JsonSerializerOptions
 {
@@ -26,7 +26,8 @@ builder.Services.AddSingleton(jsonOptions);
 
 builder.Services.AddAuthorizationCore();
 
-builder.Services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
+builder.Services.AddScoped<ApiAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<ApiAuthenticationStateProvider>());
 
 builder.Services.AddScoped<AuthTokenHandler>();
 

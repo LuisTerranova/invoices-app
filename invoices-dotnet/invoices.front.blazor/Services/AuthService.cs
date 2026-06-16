@@ -1,7 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using invoices.core.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 
 namespace invoices.front.blazor.Services;
@@ -10,23 +9,24 @@ public class AuthService
 {
     private readonly HttpClient _http;
     private readonly JsonSerializerOptions _json;
-    private readonly ApiAuthenticationStateProvider _authStateProvider;
     private readonly IJSRuntime _js;
+    private readonly ApiAuthenticationStateProvider _authStateProvider;
 
     private const string TokenKey = "auth_token";
     private const string RefreshTokenKey = "auth_refresh_token";
     private const string ExpiresAtKey = "auth_expires_at";
 
     public AuthService(
-        IHttpClientFactory httpClientFactory,
         JsonSerializerOptions json,
+        IJSRuntime js,
         ApiAuthenticationStateProvider authStateProvider,
-        IJSRuntime js)
+        IConfiguration configuration)
     {
-        _http = httpClientFactory.CreateClient("Api");
+        var apiBaseUrl = configuration["ApiBaseUrl"] ?? "http://localhost:5152";
+        _http = new HttpClient { BaseAddress = new Uri(apiBaseUrl) };
         _json = json;
-        _authStateProvider = authStateProvider;
         _js = js;
+        _authStateProvider = authStateProvider;
     }
 
     public async Task<string?> GetTokenAsync()

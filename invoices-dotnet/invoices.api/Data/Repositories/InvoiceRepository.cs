@@ -130,6 +130,16 @@ public class InvoiceRepository(AppDbContext db) : IInvoiceRepository
             .ToListAsync(ct);
     }
 
+    public async Task<List<Invoice>> GetByIdsAsync(List<Guid> ids, CancellationToken ct = default)
+    {
+        return await db.Invoices
+            .Include(i => i.Establishment)
+            .Include(i => i.Items)
+            .AsNoTracking()
+            .Where(i => ids.Contains(i.Id))
+            .ToListAsync(ct);
+    }
+
     public async Task SaveChangesAsync(CancellationToken ct = default)
     {
         await db.SaveChangesAsync(ct);

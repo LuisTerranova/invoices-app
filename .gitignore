@@ -39,3 +39,8 @@ Thumbs.db
 
 # Graphify generated artifacts
 graphify-out/
+
+# Test output artifacts
+**/*_output.txt
+**/test_output.txt
+test_output.txt

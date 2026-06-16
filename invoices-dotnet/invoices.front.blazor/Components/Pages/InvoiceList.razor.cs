@@ -3,6 +3,7 @@ using invoices.front.blazor.Components.Shared;
 using invoices.front.blazor.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace invoices.front.blazor.Components.Pages;
@@ -21,9 +22,18 @@ public partial class InvoiceList : ComponentBase
     [Inject]
     private ISnackbar Snackbar { get; set; } = null!;
 
+    [Inject]
+    private IJSRuntime JS { get; set; } = null!;
+
     private List<Invoice> _invoices = [];
     private List<YearMonthGroup> _groups = [];
     private HashSet<Invoice> _selectedInvoices = [];
+
+    private void OnSelectedItemsChanged(HashSet<Invoice> items)
+    {
+        _selectedInvoices = items ?? [];
+        StateHasChanged();
+    }
     private YearMonthGroup? _selectedGroup;
     private string _searchText = string.Empty;
     private int _currentPage = 1;
@@ -32,8 +42,6 @@ public partial class InvoiceList : ComponentBase
     private bool _isInitialLoading = true;
     private bool _isExporting;
     private string? _errorMessage;
-    private string? _sortBy;
-    private SortDirection _sortDirection = SortDirection.Descending;
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)_totalCount / _pageSize));
     private bool _canGoPrevious => _currentPage > 1;
@@ -57,9 +65,9 @@ public partial class InvoiceList : ComponentBase
                 : Task.FromResult(_groups);
 
             var loadInvoices = InvoiceService.GetAllAsync(
-                _currentPage, _pageSize, 
+                _currentPage, _pageSize,
                 string.IsNullOrWhiteSpace(_searchText) ? null : _searchText,
-                _sortBy, _sortDirection == SortDirection.Ascending,
+                null, false,
                 _selectedGroup?.Year, _selectedGroup?.Month);
 
             var loadCount = InvoiceService.GetCountAsync(
@@ -80,6 +88,16 @@ public partial class InvoiceList : ComponentBase
         {
             _isInitialLoading = false;
         }
+    }
+
+    private async Task HandleRefresh()
+    {
+        _currentPage = 1;
+        _searchText = string.Empty;
+        _selectedGroup = null;
+        _groups.Clear();
+        await LoadData();
+        Snackbar.Add("Lista atualizada.", Severity.Normal);
     }
 
     private async Task HandleSearch()
@@ -124,12 +142,24 @@ public partial class InvoiceList : ComponentBase
         await LoadData();
     }
 
+    private async Task HandlePageChanged(int page)
+    {
+        if (_currentPage == page) return;
+        _currentPage = page;
+        await LoadData();
+    }
+
     private async Task HandleRowClick(TableRowClickEventArgs<Invoice> args)
     {
         if (args.Item is not null)
         {
             Navigation.NavigateTo($"/invoices/{args.Item.Id}");
         }
+    }
+
+    private void NavigateToDetail(Invoice invoice)
+    {
+        Navigation.NavigateTo($"/invoices/{invoice.Id}");
     }
 
     private async Task OpenDeleteDialog()
@@ -139,7 +169,7 @@ public partial class InvoiceList : ComponentBase
 
         var confirmed = await ShowConfirmDialog(
             "Excluir Notas Fiscais",
-            $"Deseja realmente excluir {idsToDelete.Count} nota(s) fiscal(is)?");
+            $"Deseja realmente excluir {idsToDelete.Count} nota(s) fiscal(is)? Esta ação não pode ser desfeita.");
 
         if (confirmed)
         {
@@ -161,7 +191,7 @@ public partial class InvoiceList : ComponentBase
     {
         var confirmed = await ShowConfirmDialog(
             "Excluir Nota Fiscal",
-            $"Deseja realmente excluir a nota de {invoice.RawEstablishment}?");
+            $"Deseja realmente excluir a nota de \"{invoice.RawEstablishment}\"? Esta ação não pode ser desfeita.");
 
         if (confirmed)
         {
@@ -180,14 +210,32 @@ public partial class InvoiceList : ComponentBase
 
     private async Task HandleExport()
     {
-        if (_selectedGroup is null) return;
+        if (_selectedGroup is null && _selectedInvoices.Count == 0) return;
 
         _isExporting = true;
         try
         {
-            Navigation.NavigateTo(
-                $"api/invoices/export?year={_selectedGroup.Year}&month={_selectedGroup.Month}",
-                forceLoad: true);
+            Stream stream;
+            string fileName;
+
+            if (_selectedInvoices.Count > 0)
+            {
+                var ids = _selectedInvoices.Select(i => i.Id).ToList();
+                (stream, fileName) = await InvoiceService.DownloadExportAsync(null, null, ids);
+            }
+            else
+            {
+                (stream, fileName) = await InvoiceService.DownloadExportAsync(_selectedGroup!.Year, _selectedGroup.Month, null);
+            }
+
+            using var streamRef = new DotNetStreamReference(stream);
+            await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+            
+            Snackbar.Add("Relatório exportado com sucesso!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao exportar relatório: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -201,7 +249,13 @@ public partial class InvoiceList : ComponentBase
         {
             { "Message", message }
         };
-        var dialog = await Dialog.ShowAsync<ConfirmDialog>(title, parameters);
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+        };
+        var dialog = await Dialog.ShowAsync<ConfirmDialog>(title, parameters, options);
         var result = await dialog.Result;
         return !result.Canceled;
     }

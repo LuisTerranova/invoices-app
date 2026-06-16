@@ -1,48 +1,67 @@
 @page "/login"
 @namespace invoices.front.blazor.Components.Pages
 
-<MudText Typo="Typo.h5" Align="Align.Center" Class="mb-6" Style="color: #2D2B36; font-weight: 600;">
-    Entrar
-</MudText>
+<MudForm @ref="_form" @bind-IsValid="_isFormValid" ValidationDelay="0">
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-1" Color="Color.Dark">
+        Bem-vindo de volta
+    </MudText>
+    <MudText Typo="Typo.body2" Align="Align.Center" Class="mb-6" Color="Color.Secondary"
+             Style="color: var(--mud-palette-text-secondary);">
+        Entre com suas credenciais para acessar
+    </MudText>
 
-<MudTextField @bind-Value="_username"
-              Label="Usuário"
-              For="@(() => _username)"
-              Immediate="true"
-              Variant="Variant.Outlined"
-              Class="mb-4"
-              Adornment="Adornment.Start"
-              AdornmentIcon="@Icons.Material.Filled.Person" />
+    <MudTextField @bind-Value="_username"
+                  Label="Usuário"
+                  For="@(() => _username)"
+                  Immediate="true"
+                  Variant="Variant.Outlined"
+                  Class="mb-4"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Person"
+                  Required="true"
+                  RequiredError="Usuário é obrigatório"
+                  AutoFocus="true"
+                  Disabled="_isLoading" />
 
-<MudTextField @bind-Value="_password"
-              Label="Senha"
-              InputType="InputType.Password"
-              Variant="Variant.Outlined"
-              Class="mb-6"
-              Adornment="Adornment.Start"
-              AdornmentIcon="@Icons.Material.Filled.Lock" />
+    <MudTextField @bind-Value="_password"
+                  Label="Senha"
+                  For="@(() => _password)"
+                  Immediate="true"
+                  InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                  Variant="Variant.Outlined"
+                  Class="mb-2"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                  OnAdornmentClick="@(() => _showPassword = !_showPassword)"
+                  Required="true"
+                  RequiredError="Senha é obrigatória"
+                  Disabled="_isLoading" />
 
-@if (!string.IsNullOrEmpty(_errorMessage))
-{
-    <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
-        @_errorMessage
-    </MudAlert>
-}
-
-<MudButton Variant="Variant.Filled"
-           Color="Color.Primary"
-           FullWidth="true"
-           Disabled="_isLoading"
-           Size="Size.Large"
-           OnClick="HandleLogin"
-           Class="mb-4">
-    @if (_isLoading)
+    @if (!string.IsNullOrEmpty(_errorMessage))
     {
-        <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
-        <span>Entrando...</span>
+        <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true" Variant="Variant.Filled"
+                  Icon="@Icons.Material.Filled.Lock">
+            @_errorMessage
+        </MudAlert>
     }
-    else
-    {
-        <span>Entrar</span>
-    }
-</MudButton>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               FullWidth="true"
+               Disabled="@(_isLoading)"
+               Size="Size.Large"
+               OnClick="HandleLogin"
+               Class="mt-4"
+               Style="height: 48px; font-size: 1rem; border-radius: 8px;">
+        @if (_isLoading)
+        {
+            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
+            <span>Entrando...</span>
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Filled.Login" Class="mr-2" Size="Size.Small" />
+            <span>Entrar</span>
+        }
+    </MudButton>
+</MudForm>

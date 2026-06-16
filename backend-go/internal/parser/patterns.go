@@ -10,8 +10,8 @@ var (
 	// Standalone 44-digit sequence when no keyword is found (handles OCR spaces)
 	reAccessKeyStandalone = regexp.MustCompile(`(\d[\s\d]{43,60})`)
 
-	// Match standard Brazilian CNPJ format
-	reCNPJ = regexp.MustCompile(`\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}`)
+	// Match standard Brazilian CNPJ format (also handles OCR commas instead of dots)
+	reCNPJ = regexp.MustCompile(`\d{2}\.?\d{3}[.,]?\d{3}/?\d{4}-?\d{2}`)
 
 	// Extract date in DD/MM/YYYY, DD-MM-YYYY, or DD.MM.YYYY format
 	reDate = regexp.MustCompile(`\d{2}[/\-\.]\d{2}[/\-\.]\d{4}`)
@@ -35,5 +35,5 @@ var (
 	}
 
 	// Identify store names/headers (anchored to start of line)
-	reStoreName = regexp.MustCompile(`(?i)^[A-Z][A-Z\s]*?(?:LOJA|DISTRIBUIDORA|MERCADO|FARMACIA|POSTO|MERCEARIA|PADARIA|ACOUGUE|SUPERMERCADO|COMERCIAL|EMPRESA)`)
+	reStoreName = regexp.MustCompile(`(?i)^[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]*?(?:LOJA|DISTRIBUIDORA|MERCADO|FARMACIA|POSTO|MERCEARIA|PADARIA|ACOUGUE|SUPERMERCADO|COMERCIAL|EMPRESA|INDUSTRIA|COMERCIO|LTDA|EIRELI|MEI|EIRE|ALIMENTOS|PRODUTOS|IMPORTACAO|EXPORTACAO)`)
 )
