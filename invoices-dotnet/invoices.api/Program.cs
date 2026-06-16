@@ -12,8 +12,24 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RabbitMQ.Client;
+using Serilog;
+using Polly;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
+    Log.Information("Starting web application");
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Services.AddSerilog((services, lc) => lc
+        .ReadFrom.Configuration(builder.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console(new Serilog.Formatting.Compact.CompactJsonFormatter()));
+
 
 // Configuração nativa do Kestrel para HTTP (8080) e HTTPS (8081) com certificado gerado em memória
 builder.WebHost.ConfigureKestrel(options =>
@@ -57,23 +73,14 @@ builder.Services.AddSingleton(sp =>
         Password = config["Password"] ?? "guest",
     };
 
-    const int maxRetries = 5;
-    for (int i = 0; i < maxRetries; i++)
-    {
-        try
-        {
-            return factory.CreateConnectionAsync().GetAwaiter().GetResult();
-        }
-        catch (Exception) when (i < maxRetries - 1)
-        {
-            Console.WriteLine(
-                $"RabbitMQ connection attempt {i + 1}/{maxRetries} failed. Retrying in 3s..."
-            );
-            Thread.Sleep(3000);
-        }
-    }
+    var policy = Policy.Handle<Exception>()
+        .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+            (exception, timeSpan, retryCount, context) =>
+            {
+                Log.Warning($"RabbitMQ connection attempt {retryCount} failed: {exception.Message}. Retrying in {timeSpan.TotalSeconds}s...");
+            });
 
-    throw new InvalidOperationException("Failed to connect to RabbitMQ after multiple retries.");
+    return policy.Execute(() => factory.CreateConnectionAsync().GetAwaiter().GetResult());
 });
 
 builder.Services.AddSingleton<IChannel>(sp =>
@@ -183,5 +190,15 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 public partial class Program { }

@@ -257,6 +257,6 @@ public partial class InvoiceList : ComponentBase
         };
         var dialog = await Dialog.ShowAsync<ConfirmDialog>(title, parameters, options);
         var result = await dialog.Result;
-        return !result.Canceled;
+        return result is not null && !result.Canceled;
     }
 }

@@ -11,8 +11,8 @@
 @if (_isLoading)
 {
     <MudPaper Elevation="1" Class="pa-6">
-        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="120px" Class="mb-4" />
-        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="200px" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Class="mb-4" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" />
     </MudPaper>
 }
 else if (_errorMessage is not null)
@@ -88,25 +88,27 @@ else
             Itens da Nota
         </MudText>
 
-        <div class="d-flex flex-wrap gap-4">
-            <MudTextField @bind-Value="_editEstablishment" Label="Estabelecimento"
-                          Variant="Variant.Outlined" For="@(() => _editEstablishment)"
-                          Class="flex-grow-1 min-w-250" Disabled="!_isEditing" />
+        <MudForm @ref="_editForm" @bind-IsValid="_isEditFormValid">
+            <div class="d-flex flex-wrap gap-4">
+                <MudTextField @bind-Value="_editEstablishment" Label="Estabelecimento"
+                              Variant="Variant.Outlined" For="@(() => _editEstablishment)"
+                              Class="flex-grow-1 min-w-250" Disabled="!_isEditing" />
 
-            <MudTextField @bind-Value="_editCnpj" Label="CNPJ"
-                          Variant="Variant.Outlined" For="@(() => _editCnpj)"
-                          Class="flex-grow-1 min-w-200" Disabled="!_isEditing" />
+                <MudTextField @bind-Value="_editCnpj" Label="CNPJ"
+                              Variant="Variant.Outlined" For="@(() => _editCnpj)"
+                              Class="flex-grow-1 min-w-200" Disabled="!_isEditing" />
 
-            <MudDatePicker @bind-Date="_editDate" Label="Data"
-                           Variant="Variant.Outlined"
-                           Class="flex-grow-1 min-w-180"
-                           Disabled="!_isEditing" InputFormat="dd/MM/yyyy" />
+                <MudDatePicker @bind-Date="_editDate" Label="Data"
+                               Variant="Variant.Outlined"
+                               Class="flex-grow-1 min-w-180"
+                               Disabled="!_isEditing" DateFormat="dd/MM/yyyy" />
 
-            <MudNumericField @bind-Value="_editTotal" Label="Total"
-                              Variant="Variant.Outlined" For="@(() => _editTotal)"
-                              Class="flex-grow-1 min-w-150"
-                              Disabled="!_isEditing" Format="C2" />
-        </div>
+                <MudNumericField @bind-Value="_editTotal" Label="Total"
+                                  Variant="Variant.Outlined" For="@(() => _editTotal)"
+                                  Class="flex-grow-1 min-w-150"
+                                  Disabled="!_isEditing" Format="C2" />
+            </div>
+        </MudForm>
 
         @if (_invoice.ParseErrors?.Count > 0)
         {
@@ -156,7 +158,7 @@ else
                 <MudTd DataLabel="Nome" Class="min-w-200">
                     @if (_isEditing)
                     {
-                        <MudTextField @bind-Value="context.Name" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="context.Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     }
                     else
                     {
@@ -166,7 +168,7 @@ else
                 <MudTd DataLabel="Quantidade">
                     @if (_isEditing)
                     {
-                        <MudNumericField @bind-Value="context.Quantity" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense" />
+                        <MudNumericField @bind-Value="context.Quantity" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     }
                     else
                     {
@@ -176,7 +178,7 @@ else
                 <MudTd DataLabel="Preço Unit.">
                     @if (_isEditing)
                     {
-                        <MudNumericField @bind-Value="context.UnitPrice" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense" Format="C2" />
+                        <MudNumericField @bind-Value="context.UnitPrice" Variant="Variant.Outlined" Margin="Margin.Dense" Format="C2" />
                     }
                     else
                     {
@@ -186,7 +188,7 @@ else
                 <MudTd DataLabel="Total">
                     @if (_isEditing)
                     {
-                        <MudNumericField @bind-Value="context.Total" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense" Format="C2" />
+                        <MudNumericField @bind-Value="context.Total" Variant="Variant.Outlined" Margin="Margin.Dense" Format="C2" />
                     }
                     else
                     {

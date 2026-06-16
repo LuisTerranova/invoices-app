@@ -11,11 +11,11 @@
 @if (_isInitialLoading)
 {
     <MudPaper Elevation="1" Class="pa-6">
-        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="48px" Class="mb-4" />
-        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="32px" Class="mb-2" />
-        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="32px" Class="mb-2" />
-        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="32px" Class="mb-2" />
-        <MudSkeleton Variant="SkeletonVariant.Rectangle" Height="32px" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="48px" Class="mb-4" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="32px" Class="mb-2" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="32px" Class="mb-2" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="32px" Class="mb-2" />
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="32px" />
     </MudPaper>
 }
 else if (_errorMessage is not null)
@@ -36,7 +36,7 @@ else
                           AdornmentIcon="@Icons.Material.Filled.Search"
                           Class="flex-grow-1 flex-grow-sm-12"
                           Immediate="true"
-                          KeyUp="HandleSearchKeyUp"
+                          OnKeyUp="HandleSearchKeyUp"
                           Clearable="true"
                           OnClearButtonClick="HandleClearSearch" />
 
@@ -51,7 +51,7 @@ else
                            Variant="Variant.Outlined"
                            Size="Size.Large"
                            OnClick="HandleRefresh"
-                           Title="Atualizar lista" />
+                           title="Atualizar lista" />
 
             <MudButton Variant="Variant.Filled"
                        Color="Color.Error"
@@ -136,10 +136,10 @@ else
                     <MudTh><MudText Typo="Typo.body2">Ações</MudText></MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="Estabelecimento" OnClick="() => NavigateToDetail(context)">
+                    <MudTd DataLabel="Estabelecimento" @onclick="() => NavigateToDetail(context)">
                         <MudText Typo="Typo.body2" Color="Color.Primary" Style="cursor: pointer; font-weight: 500;">@context.Establishment?.Name</MudText>
                     </MudTd>
-                    <MudTd DataLabel="CNPJ" OnClick="() => NavigateToDetail(context)">
+                    <MudTd DataLabel="CNPJ" @onclick="() => NavigateToDetail(context)">
                         <MudText Typo="Typo.body2" Style="cursor: pointer;">@context.Establishment?.Cnpj</MudText>
                     </MudTd>
                     <MudTd DataLabel="Data">
@@ -163,12 +163,12 @@ else
                                        Size="Size.Small"
                                        Color="Color.Primary"
                                        OnClick="() => NavigateToDetail(context)"
-                                       Title="Visualizar / Editar" />
+                                       title="Visualizar / Editar" />
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Size="Size.Small"
                                        Color="Color.Error"
                                        OnClick="() => OpenSingleDeleteDialog(context)"
-                                       Title="Excluir" />
+                                       title="Excluir" />
                     </MudTd>
                 </RowTemplate>
             </MudTable>

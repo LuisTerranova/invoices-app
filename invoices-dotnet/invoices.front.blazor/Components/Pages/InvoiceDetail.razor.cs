@@ -42,7 +42,7 @@ public partial class InvoiceDetail : ComponentBase
     private DateTime? _editDate;
     private decimal? _editTotal;
     private List<ParsedItem> _editableItems = [];
-    private ParsedItem? _selectedItem;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -108,7 +108,7 @@ public partial class InvoiceDetail : ComponentBase
     {
         if (_invoice is null) return;
 
-        await _editForm.Validate();
+        await _editForm.ValidateAsync();
         if (!_isEditFormValid)
         {
             Snackbar.Add("Corrija os campos obrigatórios antes de salvar.", Severity.Warning);
@@ -231,6 +231,6 @@ public partial class InvoiceDetail : ComponentBase
         };
         var dialog = await Dialog.ShowAsync<ConfirmDialog>(title, parameters, options);
         var result = await dialog.Result;
-        return !result.Canceled;
+        return result is not null && !result.Canceled;
     }
 }

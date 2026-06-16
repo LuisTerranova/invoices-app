@@ -1,17 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
     --md-sys-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --color-primary: #C17A4A;
-    --color-primary-light: #D49B6E;
-    --color-bg: #FAF7F2;
+    --font-heading: 'Outfit', sans-serif;
+    
+    /* Vibrant Beige & Rust Palette */
+    --color-primary: #C87A4F;
+    --color-primary-light: #E8C1A0;
+    --color-bg: #F4F0E6;
     --color-surface: #FFFFFF;
-    --color-dark: #2D2B36;
-    --color-text: #3D3B48;
-    --color-text-secondary: #6D6B7A;
-    --color-border: #E5DDCD;
-    --color-success: #6B8E7A;
-    --color-error: #D4606A;
+    --color-dark: #2A2F33;
+    --color-text: #36332E;
+    --color-text-secondary: #7A746B;
+    --color-border: #E0D7C6;
+    --color-success: #52796F;
+    --color-error: #D05353;
+
+    --shadow-soft: 0 8px 30px rgba(200, 122, 79, 0.12);
+    --shadow-hover: 0 12px 40px rgba(200, 122, 79, 0.2);
 }
 
 html, body {
@@ -20,27 +26,115 @@ html, body {
     padding: 0;
     height: 100%;
     background-color: var(--color-bg);
+    color: var(--color-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-#app {
-    height: 100%;
+h1, h2, h3, h4, h5, h6, .mud-typography-h1, .mud-typography-h2, .mud-typography-h3, .mud-typography-h4, .mud-typography-h5, .mud-typography-h6 {
+    font-family: var(--font-heading) !important;
 }
 
+#app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ─── Layout & Glassmorphism ───────────────────────────────── */
+.mud-layout {
+    background-color: var(--color-bg) !important;
+}
+
+.mud-appbar {
+    background: rgba(244, 240, 230, 0.8) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(224, 215, 198, 0.5);
+    color: var(--color-dark) !important;
+    box-shadow: none !important;
+}
+
+.mud-drawer {
+    background: var(--color-surface) !important;
+    border-right: 1px solid var(--color-border);
+    box-shadow: var(--shadow-soft) !important;
+}
+
+.mud-paper {
+    border-radius: 16px !important;
+    box-shadow: var(--shadow-soft) !important;
+    border: 1px solid rgba(224, 215, 198, 0.3);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* ─── Premium Login Page ────────────────────────────────────── */
 .login-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, var(--mud-palette-dark) 0%, #3D3B48 50%, var(--mud-palette-dark) 100%);
+    background: linear-gradient(135deg, #F4F0E6 0%, #E8C1A0 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.login-page::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(200,122,79,0.15) 0%, rgba(255,255,255,0) 70%);
+    top: -200px;
+    left: -200px;
+    border-radius: 50%;
+}
+
+.login-page::after {
+    content: '';
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%);
+    bottom: -300px;
+    right: -200px;
+    border-radius: 50%;
 }
 
 .login-title {
-    color: #EFE7D8 !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.5px;
+    color: var(--color-dark) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.5px;
 }
 
 .login-subtitle {
-    color: #8D8B9A !important;
+    color: var(--color-text-secondary) !important;
+    font-size: 1.1rem;
+}
+
+/* ─── Interactive Elements ─────────────────────────────────── */
+.mud-button-filled {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px;
+    box-shadow: 0 4px 14px 0 rgba(200, 122, 79, 0.3) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.mud-button-filled:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(200, 122, 79, 0.4) !important;
+}
+
+.mud-input-control > .mud-input-control-input-container > .mud-input-label-inputcontrol {
+    color: var(--color-text-secondary);
+}
+
+.mud-input.mud-input-outlined .mud-input-outlined-border {
+    border-radius: 12px;
+    border-color: var(--color-border);
+}
+
+.mud-input.mud-input-outlined:focus-within .mud-input-outlined-border {
+    border-color: var(--color-primary);
+    border-width: 2px;
 }
 
 /* ─── Loading Progress ─────────────────────────────────────── */
@@ -54,14 +148,14 @@ html, body {
 
 .loading-progress circle {
     fill: none;
-    stroke: #EFE7D8;
+    stroke: var(--color-primary-light);
     stroke-width: 0.6rem;
     transform-origin: 50% 50%;
     transform: rotate(-90deg);
 }
 
 .loading-progress circle:last-child {
-    stroke: #C17A4A;
+    stroke: var(--color-primary);
     stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
     transition: stroke-dasharray 0.4s ease;
 }
@@ -69,34 +163,37 @@ html, body {
 .loading-progress-text {
     text-align: center;
     font-weight: 500;
-    color: #3D3B48;
+    color: var(--color-text);
     margin-top: 0.5rem;
+    font-family: var(--font-heading);
 }
 
 .loading-progress-text::after {
-    content: var(--blazor-load-percentage-text, "Carregando...");
+    content: var(--blazor-load-percentage-text, "Loading...");
 }
 
 /* ─── Blazor Error UI ──────────────────────────────────────── */
 #blazor-error-ui {
-    background: #D4606A;
+    background: var(--color-error);
     bottom: 0;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 -4px 20px rgba(183, 102, 98, 0.3);
     display: none;
     left: 0;
-    padding: 0.7rem 1.5rem;
+    padding: 1rem 2rem;
     position: fixed;
     width: 100%;
     z-index: 10000;
     color: white;
     font-weight: 500;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
 }
 
 #blazor-error-ui .reload {
     color: white;
     text-decoration: underline;
-    margin-left: 0.75rem;
-    font-weight: 600;
+    margin-left: 1rem;
+    font-weight: 700;
 }
 
 #blazor-error-ui .dismiss {
@@ -104,7 +201,12 @@ html, body {
     float: right;
     color: white;
     opacity: 0.8;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
+    transition: opacity 0.2s;
+}
+
+#blazor-error-ui .dismiss:hover {
+    opacity: 1;
 }
 
 /* ─── Utility classes ───────────────────────────────────────── */
@@ -116,88 +218,104 @@ html, body {
 .ocr-text-block {
     white-space: pre-wrap;
     font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 0.82rem;
-    color: var(--mud-palette-text-primary);
-    background: var(--mud-palette-background);
-    padding: 16px;
-    border-radius: 8px;
-    line-height: 1.7;
-    border: 1px solid var(--mud-palette-lines-default);
+    font-size: 0.85rem;
+    color: var(--color-dark);
+    background: rgba(234, 219, 200, 0.3);
+    padding: 20px;
+    border-radius: 12px;
+    line-height: 1.8;
+    border: 1px solid var(--color-border);
     display: block;
     margin: 0;
 }
 
 /* ─── AppBar nav links ────────────────────────────────────── */
 .mud-appbar .appbar-link {
-    font-size: 0.875rem;
+    font-size: 0.95rem;
+    font-weight: 500;
     text-decoration: none !important;
-    color: inherit !important;
+    color: var(--color-text) !important;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
 }
 
 .mud-appbar .appbar-link:hover {
-    opacity: 0.85;
+    background: rgba(188, 163, 127, 0.1);
+    color: var(--color-primary) !important;
 }
 
 .mud-appbar .appbar-link.active {
     font-weight: 600;
-    opacity: 1;
-    background: none !important;
+    background: rgba(188, 163, 127, 0.15) !important;
+    color: var(--color-primary) !important;
 }
 
 .mud-appbar .appbar-separator {
-    opacity: 0.35;
+    opacity: 0.2;
+    background-color: var(--color-text);
 }
 
 .mud-appbar .appbar-sair-btn {
-    opacity: 0.75;
+    opacity: 0.8;
     text-transform: none;
-    font-size: 0.875rem;
-    min-width: auto;
-    padding: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 6px 16px;
 }
 
-/* ─── Smooth page transitions ──────────────────────────────── */
+.mud-appbar .appbar-sair-btn:hover {
+    background: rgba(183, 102, 98, 0.1);
+    color: var(--color-error) !important;
+}
+
+/* ─── Smooth page transitions & Layout ─────────────────────── */
 .mud-main-content {
-    animation: fadeIn 0.2s ease;
+    animation: fadeInSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    padding-top: 2rem !important;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
+@keyframes fadeInSlideUp {
+    from { opacity: 0; transform: translateY(15px); }
     to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ─── MudChip spacing ──────────────────────────────────────── */
-.mud-chip-set .mud-chip {
-    margin: 2px;
 }
 
 /* ─── Table header ─────────────────────────────────────────── */
 .mud-table-head .mud-table-cell {
-    font-weight: 600 !important;
-    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    font-size: 0.75rem !important;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6D6B7A;
+    letter-spacing: 0.08em;
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid var(--color-border) !important;
+}
+
+.mud-table-container {
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(232, 226, 214, 0.5);
 }
 
 /* ─── Scrollbar ────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #FAF7F2; }
-::-webkit-scrollbar-thumb { background: #C5BDB0; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #C17A4A; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(188, 163, 127, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(188, 163, 127, 0.6); }
 
 /* ─── Upload drop zone ─────────────────────────────────────── */
 .drop-zone {
-    border: 2px dashed var(--mud-palette-lines-default);
-    border-radius: 12px;
-    background: var(--mud-palette-background);
+    border: 2px dashed var(--color-primary);
+    border-radius: 16px;
+    background: rgba(188, 163, 127, 0.03);
     cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition: all 0.3s ease;
 }
 
 .drop-zone:hover {
-    border-color: var(--mud-palette-primary) !important;
-    background: var(--mud-palette-background-gray) !important;
+    background: rgba(188, 163, 127, 0.08) !important;
+    transform: scale(1.01);
+    box-shadow: var(--shadow-soft);
 }
 
 .inputfile-hidden {
@@ -205,5 +323,7 @@ html, body {
 }
 
 .error-text-sm {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    color: var(--color-error);
+    font-weight: 500;
 }

@@ -34,7 +34,7 @@ public partial class LoginPage : ComponentBase
 
     private async Task HandleLogin()
     {
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (!_isFormValid) return;
 
         _isLoading = true;

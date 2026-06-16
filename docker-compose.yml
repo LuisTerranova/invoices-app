@@ -43,7 +43,6 @@ services:
     restart: always
     ports:
       - "5152:8080"
-      - "7118:8081"
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=invoices_db;Username=postgres;Password=postgrespassword
       - RabbitMQ__HostName=rabbitmq
@@ -68,6 +67,70 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - invoices-api
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: always
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./infrastructure/loki/local-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    restart: always
+    volumes:
+      - /var/log:/var/log
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./infrastructure/promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml
+    command: -config.file=/etc/promtail/promtail-config.yaml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+      - loki
+
+# Declaração unificada de todos os volumes nomeados
 volumes:
   rabbitmq_data:
   postgres_data:
+  prometheus_data:
+  loki_data:
+  grafana_data:
+  caddy_data:
+  caddy_config:

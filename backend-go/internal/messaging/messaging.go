@@ -2,6 +2,7 @@
 package messaging
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/LuisTerranova/invoices-app/backend-go/internal/models"
@@ -14,13 +15,14 @@ func ToRawInvoice(body []byte) (models.RawInvoice, error) {
 	return raw, err
 }
 
-func PublishParsedInvoice(ch *amqp.Channel, result models.ParsedInvoice) error {
+func PublishParsedInvoice(ctx context.Context, ch *amqp.Channel, result models.ParsedInvoice) error {
 	body, err := json.Marshal(result)
 	if err != nil {
 		return err
 	}
 
-	return ch.Publish(
+	return ch.PublishWithContext(
+		ctx,
 		"",                   // exchange
 		"processed_invoices", // .NET return queue
 		false,
